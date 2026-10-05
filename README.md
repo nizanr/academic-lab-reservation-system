@@ -10,11 +10,11 @@ Bu proje, üniversite bünyesindeki öğrencilerin akademisyenlerden birebir dan
 - **Dinamik Takvim & Çakışma Önleme:** Aynı zaman dilimine çift randevu oluşmasını engelleyen veritabanı kontrolü.
 - **Onay / Red Mekanizması:** Akademisyen ve lab yöneticileri için talep yönetim paneli.
 
-## Takım Üyeleri ve İş Bölümü
+## Grup Üyeleri ve İş Bölümü
 - **[Zeynep Ulusoy]:** Backend & Veritabanı Mimarısı, Rol Yetkilendirme
 - **[Nisa Nur Çakır]:** Frontend Arayüz Tasarımı, Test & Raporlama
 
-## 📅 Proje Durumu
+## Proje Durumu
 - [x] Repo oluşturuldu ve mimari planlandı.
 - [ ] Veritabanı şeması ve yetkilendirme (RBAC) kurulumu.
 - [ ] Kullanıcı ve Admin panellerinin geliştirilmesi.
