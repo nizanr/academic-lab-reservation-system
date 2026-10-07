@@ -20,13 +20,13 @@ cd academic-lab-reservation-system
 npm install
 cp .env.example .env   # JWT_SECRET değerini güçlü, rastgele bir değerle değiştirin
 ```
-SQLite veritabanı ilk çalıştırmada otomatik oluşur. Demo kullanıcı ve cihaz verilerini yalnızca yerel geliştirme için etkinleştirmek üzere `.env` dosyasında `SEED_DEMO_DATA=true` ayarlayın; seed yalnızca kullanıcı tablosu boşsa çalışır. Üretimde bunu kapalı tutun ve ilk `SUPER_ADMIN` hesabını güvenli, tek seferlik bir veritabanı bootstrap işlemiyle oluşturun.
+SQLite veritabanı ilk çalıştırmada otomatik oluşur. Demo kullanıcıları ve cihazları yalnızca `.env` dosyasında `SEED_DEMO_DATA=true` ayarlandığında oluşturulur; seed yalnızca kullanıcı tablosu boşsa çalışır. Üretimde bunu kapalı tutun ve ilk `SUPER_ADMIN` hesabını güvenli, tek seferlik bir veritabanı bootstrap işlemiyle oluşturun.
 
 ## Çalıştırma
 - Geliştirme (sunucu + istemci birlikte): `npm run dev` → arayüz http://localhost:5173, API http://localhost:3001
 - Üretim: `npm start` (istemciyi derler ve Express ile http://localhost:3001 üzerinden sunar)
 
-## Demo Kullanıcıları (yalnızca `SEED_DEMO_DATA=true` ile)
+## Demo Kullanıcıları (aşağıdaki tablo yalnızca `.env` içinde `SEED_DEMO_DATA=true` ayarlıysa geçerlidir)
 | Rol | E-posta | Şifre |
 |---|---|---|
 | SUPER_ADMIN | admin@uni.edu | Admin123! |
