@@ -7,23 +7,8 @@ const crypto = require('node:crypto');
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
-
-// config/db.js and middlewares/authMiddleware.js read these when they are first required,
-// so they must be set before any application module is loaded.
-const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'lab-reservation-test-'));
-process.env.JWT_SECRET = crypto.randomBytes(32).toString('hex');
-process.env.DB_PATH = path.join(tmpDir, 'test.sqlite');
-process.env.SEED_DEMO_DATA = 'false';
-
 const express = require('express');
 const bcrypt = require('bcryptjs');
-const db = require('../config/db');
-
-// Same wiring as server.js, which starts listening as soon as it is required.
-const app = express();
-app.use(express.json());
-app.use('/api/auth', require('../routes/authRoutes'));
-app.use('/api/reservations', require('../routes/reservationRoutes'));
 
 const PASSWORD = crypto.randomBytes(8).toString('hex');
 // A far-future day keeps the "no reservations in the past" validation out of the way.
@@ -41,12 +26,35 @@ const OVERLAPS = [
   ['overlaps the start by one minute', '08:00', '09:01']
 ];
 
+let tmpDir;
+let db;
 let server;
 let baseUrl;
 let studentA; // JWTs of two different students
 let studentB;
 let academic1; // { id, token }
 let resources; // per reservation type: a primary and another resource to book
+
+// config/db.js and middlewares/authMiddleware.js read their environment variables when they are
+// first required, so the environment is prepared and the app modules are loaded here rather than
+// at import time. Nothing is created unless the suite runs, and after() can always clean up.
+async function startApp() {
+  tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'lab-reservation-test-'));
+  process.env.JWT_SECRET = crypto.randomBytes(32).toString('hex');
+  process.env.DB_PATH = path.join(tmpDir, 'test.sqlite');
+  process.env.SEED_DEMO_DATA = 'false';
+
+  db = require('../config/db');
+  // Same wiring as server.js, which starts listening as soon as it is required.
+  const app = express();
+  app.use(express.json());
+  app.use('/api/auth', require('../routes/authRoutes'));
+  app.use('/api/reservations', require('../routes/reservationRoutes'));
+  await new Promise((resolve) => {
+    server = app.listen(0, '127.0.0.1', resolve);
+  });
+  baseUrl = `http://127.0.0.1:${server.address().port}`;
+}
 
 async function request(method, url, { token, body } = {}) {
   const headers = {};
@@ -101,10 +109,7 @@ const createDevice = (name, id = null) =>
 
 describe('double-booking prevention', () => {
   before(async () => {
-    await new Promise((resolve) => {
-      server = app.listen(0, '127.0.0.1', resolve);
-    });
-    baseUrl = `http://127.0.0.1:${server.address().port}`;
+    await startApp();
 
     studentA = await registerStudent('student.a@test.edu');
     studentB = await registerStudent('student.b@test.edu');
@@ -127,8 +132,8 @@ describe('double-booking prevention', () => {
         server.closeAllConnections();
       });
     }
-    db.close();
-    fs.rmSync(tmpDir, { recursive: true, force: true });
+    if (db) db.close();
+    if (tmpDir) fs.rmSync(tmpDir, { recursive: true, force: true });
   });
 
   beforeEach(() => {
@@ -171,7 +176,9 @@ describe('double-booking prevention', () => {
 
       it('frees the slot when the student cancels the reservation', async () => {
         const booked = await bookBaseline();
-        const cancelled = await request('PATCH', `/api/reservations/${booked.id}/cancel`, { token: studentA });
+        const cancelled = await request('PATCH', `/api/reservations/${booked.id}/cancel`, {
+          token: studentA
+        });
         assertStatus(cancelled, 200);
         await mustBook(studentB, type, primary(), at('09:00'), at('11:00'));
       });
