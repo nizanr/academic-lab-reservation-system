@@ -4,17 +4,18 @@ import dotenv from 'dotenv';
 import { initializeDatabase } from './config/db.js';
 import authRoutes from './routes/authRoutes.js';
 import reservationRoutes from './routes/reservationRoutes.js';
+import { apiLimiter, authLimiter, reservationLimiter } from './middleware/rateLimiter.js'
 
 // Load environment variables
-dotenv.config();
+dotenv.config()
 
 // Initialize database
-initializeDatabase();
+initializeDatabase()
 
 // Create Express app
-const app = express();
-const PORT = process.env.PORT || 5000;
-const CORS_ORIGIN = process.env.CORS_ORIGIN || 'http://localhost:5173';
+const app = express()
+const PORT = process.env.PORT || 5000
+const CORS_ORIGIN = process.env.CORS_ORIGIN || 'http://localhost:5173'
 
 // Middleware
 app.use(cors({
@@ -22,20 +23,23 @@ app.use(cors({
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
-}));
+}))
 
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+// Apply global rate limiter
+app.use(apiLimiter)
+
+app.use(express.json())
+app.use(express.urlencoded({ extended: true }))
 
 // Request logging middleware
 app.use((req, res, next) => {
-  console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
-  next();
-});
+  console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`)
+  next()
+})
 
-// Routes
-app.use('/api/auth', authRoutes);
-app.use('/api/reservations', reservationRoutes);
+// Routes with specific rate limiters
+app.use('/api/auth', authLimiter, authRoutes)
+app.use('/api/reservations', reservationLimiter, reservationRoutes)
 
 // Health check
 app.get('/api/health', (req, res) => {
