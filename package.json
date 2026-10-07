@@ -8,7 +8,8 @@
     "dev": "concurrently -n server,client -c blue,green \"node --watch server.js\" \"vite\"",
     "build": "vite build",
     "start": "npm run build && node server.js",
-    "start:server": "node server.js"
+    "start:server": "node server.js",
+    "test": "node --test"
   },
   "dependencies": {
     "@vitejs/plugin-react": "^4.7.0",

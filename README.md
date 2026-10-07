@@ -25,6 +25,7 @@ SQLite veritabanı ilk çalıştırmada otomatik oluşur. Demo kullanıcı ve ci
 ## Çalıştırma
 - Geliştirme (sunucu + istemci birlikte): `npm run dev` → arayüz http://localhost:5173, API http://localhost:3001
 - Üretim: `npm start` (istemciyi derler ve Express ile http://localhost:3001 üzerinden sunar)
+- Testler: `npm test` (Node.js yerleşik test çalıştırıcısı; geçici bir SQLite veritabanı kullanır, `.env` dosyası gerekmez)
 
 ## Demo Kullanıcıları (yalnızca `SEED_DEMO_DATA=true` ile)
 | Rol | E-posta | Şifre |
