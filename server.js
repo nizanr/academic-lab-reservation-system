@@ -1,4 +1,5 @@
 require('dotenv').config();
+if (!process.env.JWT_SECRET) throw new Error('JWT_SECRET environment variable is required.');
 const path = require('path');
 const fs = require('fs');
 const express = require('express');
@@ -22,7 +23,9 @@ if (fs.existsSync(dist)) {
 
 app.use((err, req, res, next) => {
   console.error(err);
-  res.status(500).json({ error: 'Sunucu hatası.' });
+  const status = err.status || err.statusCode;
+  const clientError = status >= 400 && status < 500;
+  res.status(clientError ? status : 500).json({ error: clientError ? 'Geçersiz istek.' : 'Sunucu hatası.' });
 });
 
 const PORT = process.env.PORT || 3001;

@@ -66,6 +66,6 @@ function seed() {
     insDevice.run('VR Gözlük (Quest 3)', 'Sanal gerçeklik başlığı', 'Lab 2');
   })();
 }
-seed();
+if (process.env.SEED_DEMO_DATA === 'true') seed();
 
 module.exports = db;

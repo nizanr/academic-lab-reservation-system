@@ -18,21 +18,21 @@ Bu proje, üniversite bünyesindeki öğrencilerin akademisyenlerden birebir dan
 git clone https://github.com/nizanr/academic-lab-reservation-system.git
 cd academic-lab-reservation-system
 npm install
-cp .env.example .env   # PORT, JWT_SECRET, DB_PATH değerlerini düzenleyin
+cp .env.example .env   # JWT_SECRET değerini güçlü, rastgele bir değerle değiştirin
 ```
 **`JWT_SECRET` zorunludur**; tanımlı değilse sunucu hata vererek başlamaz. Güvenli bir değer üretmek için:
 ```bash
 node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 ```
 Çıktıyı `.env` dosyasındaki `JWT_SECRET=` satırına yazın.
-SQLite veritabanı ve örnek veriler ilk çalıştırmada otomatik oluşur.
+SQLite veritabanı ilk çalıştırmada otomatik oluşur. Demo kullanıcı ve cihaz verilerini yalnızca yerel geliştirme için etkinleştirmek üzere `.env` dosyasında `SEED_DEMO_DATA=true` ayarlayın; seed yalnızca kullanıcı tablosu boşsa çalışır. Üretimde bunu kapalı tutun ve ilk `SUPER_ADMIN` hesabını güvenli, tek seferlik bir veritabanı bootstrap işlemiyle oluşturun.
 
 ## Çalıştırma
 - Not: Aşağıdaki komutlar için `JWT_SECRET` içeren bir `.env` dosyası gereklidir.
 - Geliştirme (sunucu + istemci birlikte): `npm run dev` → arayüz http://localhost:5173, API http://localhost:3001
 - Üretim: `npm start` (istemciyi derler ve Express ile http://localhost:3001 üzerinden sunar)
 
-## Test Kullanıcıları (seed)
+## Demo Kullanıcıları (yalnızca `SEED_DEMO_DATA=true` ile)
 | Rol | E-posta | Şifre |
 |---|---|---|
 | SUPER_ADMIN | admin@uni.edu | Admin123! |
@@ -48,7 +48,7 @@ SQLite veritabanı ve örnek veriler ilk çalıştırmada otomatik oluşur.
 - `GET /api/reservations/incoming`, `PATCH /api/reservations/:id/status` (ACADEMIC/SUPER_ADMIN)
 - `GET /api/reservations/stats/devices`, `GET /api/reservations/stats/status`
 - `/api/reservations/admin/*` (SUPER_ADMIN: rol ve cihaz yönetimi)
-- Token yoksa 401, rol yetersizse 403 döner. Arayüz verileri 5 sn'lik polling ile yeniler.
+- Token yoksa 401, rol yetersizse 403 döner. Arayüz verileri türüne göre 5 sn'de (rezervasyonlar ve dolu aralıklar), 10 sn'de (istatistikler), 15 sn'de (kullanıcılar) veya 30 sn'de (kaynaklar) yeniler.
 
 ## Grup Üyeleri ve İş Bölümü
 - **[Zeynep Ulusoy]:** Backend & Veritabanı Mimarısı, Rol Yetkilendirme
