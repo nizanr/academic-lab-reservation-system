@@ -20,9 +20,15 @@ cd academic-lab-reservation-system
 npm install
 cp .env.example .env   # PORT, JWT_SECRET, DB_PATH değerlerini düzenleyin
 ```
+**`JWT_SECRET` zorunludur**; tanımlı değilse sunucu hata vererek başlamaz. Güvenli bir değer üretmek için:
+```bash
+node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+```
+Çıktıyı `.env` dosyasındaki `JWT_SECRET=` satırına yazın.
 SQLite veritabanı ve örnek veriler ilk çalıştırmada otomatik oluşur.
 
 ## Çalıştırma
+- Not: Aşağıdaki komutlar için `JWT_SECRET` içeren bir `.env` dosyası gereklidir.
 - Geliştirme (sunucu + istemci birlikte): `npm run dev` → arayüz http://localhost:5173, API http://localhost:3001
 - Üretim: `npm start` (istemciyi derler ve Express ile http://localhost:3001 üzerinden sunar)
 
