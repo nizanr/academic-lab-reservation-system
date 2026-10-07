@@ -139,18 +139,21 @@ exports.cancelReservation = (req, res) => {
 // ---- Grafik verileri ----
 exports.deviceUsageStats = (req, res) => {
   // Kullanım oranı: son 30 gündeki onaylı rezervasyon saatleri / (30 gün * 8 saatlik çalışma günü)
-  const since = new Date(Date.now() - 30 * 86400000).toISOString();
+  const now = new Date();
+  const until = now.toISOString();
+  const since = new Date(now.getTime() - 30 * 86400000).toISOString();
   const capacityHours = 30 * 8;
   const rows = db
     .prepare(
       `SELECT d.id, d.name,
-              COALESCE(SUM((julianday(r.end_time) - julianday(r.start_time)) * 24), 0) AS hours,
-              COUNT(r.id) AS count
+             COALESCE(SUM((julianday(MIN(r.end_time, ?)) - julianday(MAX(r.start_time, ?))) * 24), 0) AS hours,
+             COUNT(r.id) AS count
        FROM devices d
-       LEFT JOIN reservations r ON r.device_id = d.id AND r.status = 'APPROVED' AND r.start_time >= ?
+       LEFT JOIN reservations r ON r.device_id = d.id AND r.status = 'APPROVED'
+         AND r.start_time < ? AND r.end_time > ?
        GROUP BY d.id ORDER BY d.name`
     )
-    .all(since);
+    .all(until, since, until, since);
   res.json(
     rows.map((x) => ({
       id: x.id,
