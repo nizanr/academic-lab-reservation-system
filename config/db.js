@@ -52,6 +52,7 @@ CREATE INDEX IF NOT EXISTS idx_res_student ON reservations(student_id, start_tim
 CREATE INDEX IF NOT EXISTS idx_res_device ON reservations(device_id, start_time, end_time);
 CREATE INDEX IF NOT EXISTS idx_res_academic ON reservations(academic_id, start_time, end_time);
 `);
+require('./migrations')(db);
 
 function seed() {
   if (db.prepare('SELECT COUNT(*) AS c FROM users').get().c > 0) return;

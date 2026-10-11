@@ -11,9 +11,12 @@ function authenticate(req, res, next) {
   }
   try {
     const claims = jwt.verify(token, JWT_SECRET);
-    const user = db.prepare('SELECT id, name, email, role FROM users WHERE id = ?').get(claims.id);
-    if (!user) return res.status(401).json({ error: 'Kimlik doğrulama gerekli.' });
-    req.user = user;
+    const user = db.prepare('SELECT id, name, email, role, student_number, active, token_version FROM users WHERE id = ?').get(claims.id);
+    if (!user || !user.active || (claims.version ?? 0) !== user.token_version) {
+      return res.status(401).json({ error: 'Oturum geçersiz. Yeniden giriş yapın.' });
+    }
+    const { token_version, active, ...publicUser } = user;
+    req.user = publicUser;
     next();
   } catch (e) {
     return res.status(401).json({ error: 'Geçersiz veya süresi dolmuş token.' });
