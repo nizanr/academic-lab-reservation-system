@@ -34,7 +34,11 @@ SQLite veritabanı ilk çalıştırmada otomatik oluşur. Demo kullanıcıları 
 | ACADEMIC | academic2@uni.edu | Academic123! |
 | STUDENT | student@uni.edu | Student123! |
 
-Öğrenciler `/register` sayfasından kayıt olabilir (rol her zaman STUDENT).
+Öğrenciler `/register` sayfasından ad, e-posta, 5–20 rakamlık öğrenci numarası ve 10–128 karakterlik parolayla kayıt olabilir (rol her zaman STUDENT). Önceden oluşturulmuş hesaplar korunur.
+
+Veritabanı migration sürümleri `schema_migrations` tablosunda izlenir. Sunucu açılışında eksik migration transaction içinde uygulanır; mevcut veritabanını silmeniz gerekmez. `/api/auth/logout` hesabın tüm token'larını geçersiz kılar. Pasif hesaplar giriş ve korumalı uçlara erişemez. Beş başarısız giriş denemesi sonrası 15 dakikalık pencere dolana kadar geçici engel uygulanır (tek süreçlik demo koruması).
+
+Son teknoloji kararı: React + kendi CSS'i, Node.js/Express ve SQLite. Belgelerle uygulama farkları ve kalan işler: [uygulama durumu](docs/implementation-status.md).
 
 ## API Özeti
 - `POST /api/auth/register`, `POST /api/auth/login`
