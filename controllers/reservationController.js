@@ -11,14 +11,14 @@ const SELECT_RES = `
   LEFT JOIN users a ON a.id = r.academic_id
   LEFT JOIN devices d ON d.id = r.device_id`;
 
-function findConflict(type, resourceId, start, end) {
+function findConflict(type, resourceId, studentId, start, end) {
   const col = type === 'DEVICE' ? 'device_id' : 'academic_id';
   return db
     .prepare(
       `SELECT id FROM reservations
-       WHERE ${col} = ? AND status IN ${ACTIVE} AND start_time < ? AND end_time > ?`
+       WHERE (${col} = ? OR student_id = ?) AND status IN ${ACTIVE} AND start_time < ? AND end_time > ?`
     )
-    .get(resourceId, end, start);
+    .get(resourceId, studentId, end, start);
 }
 
 exports.getResources = (req, res) => {
@@ -74,7 +74,7 @@ exports.createReservation = (req, res) => {
 
   // better-sqlite3 senkron çalışır; transaction ile kontrol + ekleme atomik olur.
   const book = db.transaction(() => {
-    if (findConflict(type, rid, s, e)) return null;
+    if (findConflict(type, rid, req.user.id, s, e)) return null;
     return db
       .prepare(
         `INSERT INTO reservations (student_id, type, academic_id, device_id, start_time, end_time, note)
@@ -103,11 +103,11 @@ exports.incomingReservations = (req, res) => {
   if (req.user.role === 'SUPER_ADMIN') {
     return res.json(db.prepare(`${SELECT_RES} ORDER BY r.start_time DESC`).all());
   }
-  // Akademisyen: kendisine gelen randevular ve tüm cihaz talepleri
+  // Akademisyen yalnızca kendi danışmanlığı ve atanmış cihazlarını görür.
   res.json(
     db
-      .prepare(`${SELECT_RES} WHERE r.academic_id = ? OR r.type = 'DEVICE' ORDER BY r.start_time DESC`)
-      .all(req.user.id)
+      .prepare(`${SELECT_RES} WHERE r.academic_id = ? OR EXISTS (SELECT 1 FROM device_managers dm WHERE dm.device_id = r.device_id AND dm.user_id = ?) ORDER BY r.start_time DESC`)
+      .all(req.user.id, req.user.id)
   );
 };
 
@@ -118,11 +118,14 @@ exports.updateStatus = (req, res) => {
   }
   const r = db.prepare('SELECT * FROM reservations WHERE id = ?').get(Number(req.params.id));
   if (!r) return res.status(404).json({ error: 'Rezervasyon bulunamadı.' });
-  if (req.user.role === 'ACADEMIC' && r.type === 'APPOINTMENT' && r.academic_id !== req.user.id) {
-    return res.status(403).json({ error: 'Bu randevu size ait değil.' });
+  if (req.user.role === 'ACADEMIC') {
+    const owns = r.type === 'APPOINTMENT' ? r.academic_id === req.user.id
+      : db.prepare('SELECT 1 FROM device_managers WHERE device_id = ? AND user_id = ?').get(r.device_id, req.user.id);
+    if (!owns) return res.status(404).json({ error: 'Rezervasyon bulunamadı.' });
   }
   if (r.status !== 'PENDING') return res.status(409).json({ error: 'Sadece bekleyen talepler güncellenebilir.' });
-  db.prepare('UPDATE reservations SET status = ? WHERE id = ?').run(status, r.id);
+  const changed = db.prepare("UPDATE reservations SET status = ? WHERE id = ? AND status = 'PENDING'").run(status, r.id);
+  if (!changed.changes) return res.status(409).json({ error: 'Talep başka bir işlemle güncellendi.' });
   res.json(db.prepare(`${SELECT_RES} WHERE r.id = ?`).get(r.id));
 };
 
@@ -188,6 +191,7 @@ exports.updateUserRole = (req, res) => {
   if (!u) return res.status(404).json({ error: 'Kullanıcı bulunamadı.' });
   db.transaction(() => {
     db.prepare('UPDATE users SET role = ? WHERE id = ?').run(role, id);
+    if (role !== 'ACADEMIC') db.prepare('DELETE FROM device_managers WHERE user_id = ?').run(id);
     if (role === 'ACADEMIC') {
       db.prepare('INSERT OR IGNORE INTO academic_profiles (user_id, title, department, office) VALUES (?,?,?,?)').run(
         id, '', '', ''
@@ -210,4 +214,19 @@ exports.deactivateDevice = (req, res) => {
   const info = db.prepare('UPDATE devices SET active = 0 WHERE id = ?').run(Number(req.params.id));
   if (!info.changes) return res.status(404).json({ error: 'Cihaz bulunamadı.' });
   res.json({ ok: true });
+};
+
+// Sorumlu ataması yalnızca admin tarafından yapılır; mevcut veriye otomatik atama yoktur.
+exports.assignDeviceManager = (req, res) => {
+  const deviceId = Number(req.params.id);
+  const userId = Number(req.body?.userId);
+  if (!Number.isSafeInteger(deviceId) || !Number.isSafeInteger(userId)) {
+    return res.status(400).json({ error: 'Geçerli cihaz ve personel seçilmeli.' });
+  }
+  if (!db.prepare('SELECT id FROM devices WHERE id = ? AND active = 1').get(deviceId)
+      || !db.prepare("SELECT id FROM users WHERE id = ? AND role = 'ACADEMIC'").get(userId)) {
+    return res.status(404).json({ error: 'Aktif cihaz veya akademisyen bulunamadı.' });
+  }
+  db.prepare('INSERT OR IGNORE INTO device_managers (device_id, user_id) VALUES (?, ?)').run(deviceId, userId);
+  res.json({ deviceId, userId });
 };
