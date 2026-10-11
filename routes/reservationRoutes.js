@@ -18,6 +18,7 @@ router.get('/stats/status', authorize('ACADEMIC', 'SUPER_ADMIN'), c.statusStats)
 
 router.get('/admin/users', authorize('SUPER_ADMIN'), c.listUsers);
 router.patch('/admin/users/:id/role', authorize('SUPER_ADMIN'), c.updateUserRole);
+router.post('/admin/devices/:id/managers', authorize('SUPER_ADMIN'), c.assignDeviceManager);
 router.post('/admin/devices', authorize('SUPER_ADMIN'), c.createDevice);
 router.delete('/admin/devices/:id', authorize('SUPER_ADMIN'), c.deactivateDevice);
 
