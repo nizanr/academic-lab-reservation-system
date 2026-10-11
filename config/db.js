@@ -31,6 +31,11 @@ CREATE TABLE IF NOT EXISTS devices (
   location TEXT,
   active INTEGER NOT NULL DEFAULT 1
 );
+CREATE TABLE IF NOT EXISTS device_managers (
+  device_id INTEGER NOT NULL REFERENCES devices(id),
+  user_id INTEGER NOT NULL REFERENCES users(id),
+  PRIMARY KEY (device_id, user_id)
+);
 CREATE TABLE IF NOT EXISTS reservations (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   student_id INTEGER NOT NULL REFERENCES users(id),
@@ -43,6 +48,7 @@ CREATE TABLE IF NOT EXISTS reservations (
   status TEXT NOT NULL DEFAULT 'PENDING' CHECK (status IN ('PENDING','APPROVED','REJECTED','CANCELLED')),
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+CREATE INDEX IF NOT EXISTS idx_res_student ON reservations(student_id, start_time, end_time);
 CREATE INDEX IF NOT EXISTS idx_res_device ON reservations(device_id, start_time, end_time);
 CREATE INDEX IF NOT EXISTS idx_res_academic ON reservations(academic_id, start_time, end_time);
 `);
@@ -64,6 +70,7 @@ function seed() {
     insDevice.run('3D Yazıcı (Prusa MK4)', 'FDM 3D yazıcı', 'Lab 1');
     insDevice.run('GPU Sunucusu (RTX 4090)', 'Derin öğrenme eğitim sunucusu', 'Sunucu Odası');
     insDevice.run('VR Gözlük (Quest 3)', 'Sanal gerçeklik başlığı', 'Lab 2');
+    db.prepare('INSERT INTO device_managers (device_id, user_id) SELECT id, ? FROM devices').run(a1);
   })();
 }
 if (process.env.SEED_DEMO_DATA === 'true') seed();
