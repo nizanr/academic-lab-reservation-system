@@ -53,3 +53,12 @@ SQLite veritabanı ilk çalıştırmada otomatik oluşur. Demo kullanıcıları 
 - [ ] Veritabanı şeması ve yetkilendirme (RBAC) kurulumu.
 - [ ] Kullanıcı ve Admin panellerinin geliştirilmesi.
 - [ ] Test senaryolarının (100 Hata) yürütülmesi ve canlı demo.
+
+## İlk iyileştirme aşaması
+- Kaynak ve öğrenci çakışması aynı BEGIN IMMEDIATE transaction içinde denetlenir.
+- Akademisyenler yalnızca kendi randevuları ve device_managers ile atanmış cihaz taleplerini görür ve değerlendirir.
+- Admin panelindeki Cihaz Sorumlusu Ata formu mevcut cihazlara sorumlu atar. Var olan cihazlara otomatik sorumlu atanmaz. Yeni demo verisinde cihazlar ilk akademisyene atanır.
+- Her kimlik doğrulanmış istekte güncel kullanıcı rolü veritabanından alınır.
+- Test: `npm test`; üretim derlemesi: `npm run build`.
+
+Bu aşama tüm proje gereksinimlerini tamamlamaz. Eğitim, uygunluk, süre dolumu, bildirim, asistan rolü, son sorumlu koruması ve personel istatistiklerinin kaynak bazında sınırlandırılması sonraki aşamalardadır.

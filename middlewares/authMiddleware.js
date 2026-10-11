@@ -1,4 +1,5 @@
 const jwt = require('jsonwebtoken');
+const db = require('../config/db');
 
 const JWT_SECRET = process.env.JWT_SECRET;
 
@@ -9,7 +10,10 @@ function authenticate(req, res, next) {
     return res.status(401).json({ error: 'Kimlik doğrulama gerekli.' });
   }
   try {
-    req.user = jwt.verify(token, JWT_SECRET);
+    const claims = jwt.verify(token, JWT_SECRET);
+    const user = db.prepare('SELECT id, name, email, role FROM users WHERE id = ?').get(claims.id);
+    if (!user) return res.status(401).json({ error: 'Kimlik doğrulama gerekli.' });
+    req.user = user;
     next();
   } catch (e) {
     return res.status(401).json({ error: 'Geçersiz veya süresi dolmuş token.' });

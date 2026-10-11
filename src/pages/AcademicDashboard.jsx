@@ -33,12 +33,24 @@ export default function AcademicDashboard() {
     rUsers();
   };
 
+  const [managerDevice, setManagerDevice] = useState('');
+  const [managerUser, setManagerUser] = useState('');
+  const [managerMessage, setManagerMessage] = useState('');
+  const fetchResources = useCallback(() => isAdmin ? api('/reservations/resources', { token }) : Promise.resolve(null), [token, isAdmin]);
+  const { data: resources, refresh: refreshResources } = useLiveData(fetchResources, 30000);
+  const assignManager = async (e) => {
+    e.preventDefault();
+    try {
+      await api(`/reservations/admin/devices/${managerDevice}/managers`, { method: 'POST', token, body: { userId: Number(managerUser) } });
+      setError(''); setManagerMessage('Cihaz sorumlusu atandı.'); refresh();
+    } catch (err) { setManagerMessage(''); setError(err.message); }
+  };
   const [devName, setDevName] = useState('');
   const addDevice = async (e) => {
     e.preventDefault();
     try { await api('/reservations/admin/devices', { method: 'POST', token, body: { name: devName } }); setDevName(''); setError(''); }
     catch (err) { setError(err.message); }
-    rDev();
+    rDev(); refreshResources();
   };
 
   const pending = (incoming || []).filter((r) => r.status === 'PENDING');
@@ -121,6 +133,19 @@ export default function AcademicDashboard() {
               </table>
             </div>
           </div>
+          <form className="card" onSubmit={assignManager}>
+            <h2>Cihaz Sorumlusu Ata</h2>
+            {managerMessage && <p role="status">{managerMessage}</p>}
+            <label>Cihaz<select required value={managerDevice} onChange={e => setManagerDevice(e.target.value)}>
+              <option value="">Cihaz seçin</option>
+              {(resources?.devices || []).map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
+            </select></label>
+            <label>Akademisyen<select required value={managerUser} onChange={e => setManagerUser(e.target.value)}>
+              <option value="">Sorumlu seçin</option>
+              {(users || []).filter(u => u.role === 'ACADEMIC').map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
+            </select></label>
+            <button className="btn" type="submit">Sorumlu ata</button>
+          </form>
           <form className="card" onSubmit={addDevice}>
             <h2>Cihaz Ekle</h2>
             <label>Cihaz adı<input required value={devName} onChange={(e) => setDevName(e.target.value)} /></label>
